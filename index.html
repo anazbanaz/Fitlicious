@@ -445,13 +445,14 @@
             activeLogData.forEach((ex, exIdx) => {
                 let setsHtml = '';
                 ex.sets.forEach((set, setIdx) => {
-                    setsHtml += `<div class="set-row"><span style="font-weight:bold; opacity:0.6;">${setIdx+1}.</span><input type="number" placeholder="kg" value="${set.weight}" onchange="updateLogData(${exIdx},${setIdx},'weight',this.value)"><input type="number" placeholder="Wdh" value="${set.reps}" onchange="updateLogData(${exIdx},${setIdx},'reps',this.value)"><button class="icon-btn" style="color:#f44; font-size:16px;" onclick="removeSet(${exIdx},${setIdx})">✕</button></div>`;
+                    setsHtml += `<div class="set-row"><span style="font-weight:bold; opacity:0.6;">${setIdx+1}.</span><input type="number" placeholder="kg" value="${set.weight}" oninput="updateLogData(${exIdx},${setIdx},'weight',this.value)"><input type="number" placeholder="Wdh" value="${set.reps}" oninput="updateLogData(${exIdx},${setIdx},'reps',this.value)"><button class="icon-btn" style="color:#f44; font-size:16px;" onclick="removeSet(${exIdx},${setIdx})">✕</button></div>`;
                 });
                 container.innerHTML += `<div class="log-exercise-card"><h4 style="margin:0 0 15px 0; color:var(--accent); border-bottom:1px solid var(--card-border); padding-bottom:5px;">${ex.name}</h4><div style="font-size:10px; display:grid; grid-template-columns:40px 1fr 1fr 40px; gap:10px; opacity:0.6; margin-bottom:5px; text-align:center;"><span>Satz</span><span>kg</span><span>Wdh</span><span></span></div>${setsHtml}<button class="btn" style="margin:10px 0 0 0;" onclick="addSet(${exIdx})">+ Satz</button></div>`;
             });
         }
 
         function updateLogData(exIdx, setIdx, field, val) { activeLogData[exIdx].sets[setIdx][field] = val; }
+        
         function addSet(exIdx) {
             let lastW = "", lastR = "";
             const sets = activeLogData[exIdx].sets;
@@ -459,8 +460,27 @@
             activeLogData[exIdx].sets.push({ weight: lastW, reps: lastR });
             renderLogExercises();
         }
-        function removeSet(exIdx, setIdx) { activeLogData[exIdx].sets.splice(setIdx, 1); if(activeLogData[exIdx].sets.length === 0) activeLogData[exIdx].sets.push({ weight: "", reps: "" }); renderLogExercises(); }
+        
+        function removeSet(exIdx, setIdx) { 
+            activeLogData[exIdx].sets.splice(setIdx, 1); 
+            if(activeLogData[exIdx].sets.length === 0) activeLogData[exIdx].sets.push({ weight: "", reps: "" }); 
+            renderLogExercises(); 
+        }
+
         function saveWorkoutLog() {
+            // Absolut sicheres DOM-Scraping beim Speichern
+            const cards = document.querySelectorAll('#log-exercises-container .log-exercise-card');
+            cards.forEach((card, exIdx) => {
+                const rows = card.querySelectorAll('.set-row');
+                rows.forEach((row, setIdx) => {
+                    const inputs = row.querySelectorAll('input');
+                    if(inputs.length >= 2) {
+                        activeLogData[exIdx].sets[setIdx].weight = inputs[0].value;
+                        activeLogData[exIdx].sets[setIdx].reps = inputs[1].value;
+                    }
+                });
+            });
+
             if(!data.logs[selectedDateStr]) data.logs[selectedDateStr] = [];
             data.logs[selectedDateStr] = data.logs[selectedDateStr].filter(l => l.planId !== selectedPlanIdToLog);
             data.logs[selectedDateStr].push({ planId: selectedPlanIdToLog, exercises: JSON.parse(JSON.stringify(activeLogData)) });
